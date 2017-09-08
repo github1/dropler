@@ -105,13 +105,13 @@ if [ -f "/${NAME}/docker-compose.yml" ]; then
     docker-compose -v
   fi
   source /${NAME}/.env
-  docker-compose -f docker-compose.yml up
+  docker-compose -f /${NAME}/docker-compose.yml up
 else
-  echo "docker-compose.yml not found"
+  echo "/${NAME}/docker-compose.yml not found"
 fi
 EOF
   ssh root@${IP_ADDR} -oStrictHostKeyChecking=no -i /tmp/${SSH_KEY_NAME} -t "rm -rf /$NAME && mkdir -p /$NAME"
-  rsync -Pav --exclude='.git/' --filter='dir-merge,- .gitignore' -e "ssh -oStrictHostKeyChecking=no -i /tmp/$SSH_KEY_NAME" ${WORKING_DIR} root@${IP_ADDR}:/
+  rsync -Pav --include='.env' --exclude='.git/' --filter='dir-merge,- .gitignore' -e "ssh -oStrictHostKeyChecking=no -i /tmp/$SSH_KEY_NAME" ${WORKING_DIR} root@${IP_ADDR}:/
   ssh root@${IP_ADDR} -oStrictHostKeyChecking=no -i /tmp/${SSH_KEY_NAME} -t "$PROVISION"
 }
 
