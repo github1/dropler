@@ -110,9 +110,9 @@ else
   echo "/${NAME}/docker-compose.yml not found"
 fi
 EOF
-  ssh root@${IP_ADDR} -oStrictHostKeyChecking=no -i /tmp/${SSH_KEY_NAME} -t "rm -rf /$NAME && mkdir -p /$NAME"
-  rsync -Pav --include='.env' --exclude='.git/' --filter='dir-merge,- .gitignore' -e "ssh -oStrictHostKeyChecking=no -i /tmp/$SSH_KEY_NAME" ${WORKING_DIR} root@${IP_ADDR}:/
-  ssh root@${IP_ADDR} -oStrictHostKeyChecking=no -i /tmp/${SSH_KEY_NAME} -t "$PROVISION"
+  ssh root@${IP_ADDR} -o UserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -i /tmp/${SSH_KEY_NAME} -t "rm -rf /$NAME && mkdir -p /$NAME"
+  rsync -Pav --include='.env' --exclude='.git/' --filter='dir-merge,- .gitignore' -e "ssh -o UserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -i /tmp/$SSH_KEY_NAME" ${WORKING_DIR} root@${IP_ADDR}:/
+  ssh root@${IP_ADDR} -o UserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -i /tmp/${SSH_KEY_NAME} -t "$PROVISION"
 }
 
 statusAction() {
@@ -141,7 +141,7 @@ destroyAction() {
 
 sshAction() {
   if [ "$(status)" == "active" ]; then
-    ssh root@$(ipv4) -oStrictHostKeyChecking=no -i /tmp/${SSH_KEY_NAME}
+    ssh root@$(ipv4) -o UserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -i /tmp/${SSH_KEY_NAME}
   else
     statusAction
   fi
