@@ -96,18 +96,26 @@ provisionAction() {
     sleep 2
   done
   read -r -d "" PROVISION <<EOF
-if [ -f "/${NAME}/docker-compose.yml" ]; then
-  if docker-compose -v > /dev/null; then
-    echo "found docker-compose"
-  else
-    sudo curl -o /usr/local/bin/docker-compose -L "https://github.com/docker/compose/releases/download/1.15.0/docker-compose-\$(uname -s)-\$(uname -m)"
-    sudo chmod +x /usr/local/bin/docker-compose
-    docker-compose -v
-  fi
-  source /${NAME}/.env
-  docker-compose -f /${NAME}/docker-compose.yml up
+if docker-compose -v > /dev/null; then
+  echo "found docker-compose"
 else
-  echo "/${NAME}/docker-compose.yml not found"
+  sudo curl -o /usr/local/bin/docker-compose -L "https://github.com/docker/compose/releases/download/1.15.0/docker-compose-\$(uname -s)-\$(uname -m)"
+  sudo chmod +x /usr/local/bin/docker-compose
+  docker-compose -v
+fi
+export DP_NAME=${NAME}
+export DP_IP_ADDR=${IP_ADDR}
+if [ -f "/${NAME}/.env" ]; then
+  source /${NAME}/.env
+fi
+if [ -f "/${NAME}/run.sh" ]; then
+  sh "/${NAME}/run.sh"
+else
+  if [ -f "/${NAME}/docker-compose.yml" ]; then
+    docker-compose -f /${NAME}/docker-compose.yml up
+  else
+    echo "/${NAME}/docker-compose.yml not found"
+  fi
 fi
 EOF
   ssh root@${IP_ADDR} -o UserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -i /tmp/${SSH_KEY_NAME} -t "rm -rf /$NAME && mkdir -p /$NAME"
