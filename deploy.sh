@@ -109,7 +109,7 @@ if [ -f "/${NAME}/.env" ]; then
   source /${NAME}/.env
 fi
 if [ -f "/${NAME}/run.sh" ]; then
-  sh "/${NAME}/run.sh"
+  . "/${NAME}/run.sh"
 else
   if [ -f "/${NAME}/docker-compose.yml" ]; then
     docker-compose -f /${NAME}/docker-compose.yml up
