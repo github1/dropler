@@ -1,47 +1,5 @@
 #!/usr/bin/env bash
 
-if [ -f ".env" ]; then
-  source .env
-fi
-
-if [ -z "$DIGITALOCEAN_TOKEN" ]; then
-  echo 'missing required env variable DIGITALOCEAN_TOKEN'
-  exit 1
-fi
-
-ACTION=$1;shift
-NAME=$(basename "${SCRIPT_PATH}")
-WORKING_DIR=$(pwd -P)
-LOCAL=false
-
-while getopts d:n:,l flag; do
-  case $flag in
-  d)
-    WORKING_DIR=$OPTARG
-    ;;
-  n)
-    NAME=$OPTARG
-    ;;
-  l)
-    LOCAL="true"
-    ;;
-  ?)
-    ACTION="help"
-    ;;
-  esac
-done
-
-if [ ! -d "${WORKING_DIR}" ]; then
-  echo "supplied dir not found - ${WORKING_DIR}"
-  exit 1
-fi
-
-if [ -z "${NAME}" ]; then
-  NAME=$(basename "$WORKING_DIR")
-fi
-
-SSH_KEY_NAME="${NAME}_ssh"
-
 help() {
   echo "dropler"
   echo ""
@@ -51,6 +9,7 @@ help() {
   echo "options:"
   echo "  -d         set the dir to upload from"
   echo "  -n         set the droplet name"
+  echo "  -e         export environment variable from host to vm"
   echo ""
   echo "commands:"
   echo "  up         creates a DigitalOcean droplet"
@@ -90,8 +49,17 @@ deployAction() {
   fi
 }
 
+asExports() {
+  for val in "$@"; do
+    echo "export $val=$(echo ${!val});"
+  done
+}
+
 provisionAction() {
   IP_ADDR=$(ipv4)
+  if [ -n "$VARS" ]; then
+    HOST_VARS=$(asExports "${VARS[@]}")
+  fi
   until nc -zvw 1 ${IP_ADDR} 22; do
     sleep 2
   done
@@ -103,11 +71,9 @@ else
   sudo chmod +x /usr/local/bin/docker-compose
   docker-compose -v
 fi
+${HOST_VARS}
 export DP_NAME=${NAME}
 export DP_IP_ADDR=${IP_ADDR}
-if [ -f "/${NAME}/.env" ]; then
-  source /${NAME}/.env
-fi
 if [ -f "/${NAME}/run.sh" ]; then
   . "/${NAME}/run.sh"
 else
@@ -119,7 +85,7 @@ else
 fi
 EOF
   ssh root@${IP_ADDR} -o UserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -i /tmp/${SSH_KEY_NAME} -t "rm -rf /$NAME && mkdir -p /$NAME"
-  rsync -Pav --include='.env' --exclude='.git/' --filter='dir-merge,- .gitignore' -e "ssh -o UserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -i /tmp/$SSH_KEY_NAME" ${WORKING_DIR} root@${IP_ADDR}:/
+  rsync -Pav --exclude='.git/' --filter='dir-merge,- .gitignore' -e "ssh -o UserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -i /tmp/$SSH_KEY_NAME" ${WORKING_DIR} root@${IP_ADDR}:/
   ssh root@${IP_ADDR} -o UserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -i /tmp/${SSH_KEY_NAME} -t "$PROVISION"
 }
 
@@ -216,6 +182,51 @@ destroy() {
     "https://api.digitalocean.com/v2/droplets?tag_name=$NAME"
   fi
 }
+
+if [ -f ".env" ]; then
+  source .env
+fi
+
+if [ -z "$DIGITALOCEAN_TOKEN" ]; then
+  echo 'missing required env variable DIGITALOCEAN_TOKEN'
+  exit 1
+fi
+
+ACTION=$1;shift
+NAME=$(basename "${SCRIPT_PATH}")
+WORKING_DIR=$(pwd -P)
+LOCAL=false
+
+while getopts d:n:e:,l flag; do
+  case $flag in
+  d)
+    WORKING_DIR=$OPTARG
+    ;;
+  n)
+    NAME=$OPTARG
+    ;;
+  e)
+    VARS+=("$OPTARG")
+    ;;
+  l)
+    LOCAL="true"
+    ;;
+  ?)
+    ACTION="help"
+    ;;
+  esac
+done
+
+if [ ! -d "${WORKING_DIR}" ]; then
+  echo "supplied dir not found - ${WORKING_DIR}"
+  exit 1
+fi
+
+if [ -z "${NAME}" ]; then
+  NAME=$(basename "$WORKING_DIR")
+fi
+
+SSH_KEY_NAME="${NAME}_ssh"
 
 if [ -z "${ACTION}" -o "${ACTION}" = "help" ]; then
   help
