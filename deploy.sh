@@ -187,6 +187,11 @@ if [ -f ".env" ]; then
   source .env
 fi
 
+if ! which jq 2>&1 > /dev/null; then
+  echo 'missing required dependency jq (https://stedolan.github.io/jq/)'
+  exit 1
+fi
+
 if [ -z "$DIGITALOCEAN_TOKEN" ]; then
   echo 'missing required env variable DIGITALOCEAN_TOKEN'
   exit 1
