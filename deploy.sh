@@ -13,6 +13,7 @@ help() {
   echo ""
   echo "commands:"
   echo "  up         creates a DigitalOcean droplet"
+  echo "  dns        updates dns A record address"
   echo "  provision  runs docker-compose on the droplet if present"
   echo "  status     shows the status of the droplet and ipv4 address"
   echo "  down       destroys the droplet"
@@ -20,7 +21,7 @@ help() {
   exit 0
 }
 
-updateCNAME() {
+updateDNS() {
   if [ -n "${ROOT_DOMAIN}" ]; then
     if [ -n "${GODADDY_KEY}" ]; then
       IP_ADDR=$(ipv4)
@@ -28,7 +29,7 @@ updateCNAME() {
       curl -sX PUT https://api.godaddy.com/v1/domains/${ROOT_DOMAIN}/records/A/${NAME} \
         -H 'Content-Type: application/json' \
         -H "Authorization: sso-key ${GODADDY_KEY}:${GODADDY_SECRET}" \
-        -d '{"data":"'${IP_ADDR}'","ttl":3600}' 2>&1 > /dev/null
+        -d '{"data":"'${IP_ADDR}'","ttl":600}' 2>&1 > /dev/null
       echo "updated ${NAME}.${ROOT_DOMAIN} to ${IP_ADDR}"
     fi
   fi
@@ -57,7 +58,6 @@ deployAction() {
   if [ "$(status)" != "active" ]; then
     echo "failed to start"
   else
-    updateCNAME
     echo "provisioning"
     provisionAction
     statusAction
@@ -72,6 +72,7 @@ asExports() {
 
 provisionAction() {
   IP_ADDR=$(ipv4)
+  updateDNS
   if [ -n "$VARS" ]; then
     HOST_VARS=$(asExports "${VARS[@]}")
   fi
@@ -266,6 +267,8 @@ else
 
   if [ "${ACTION}" = "up" ]; then
     deployAction
+  elif [ "${ACTION}" = "dns" ]; then
+    updateDNS
   elif [ "${ACTION}" = "provision" ]; then
     provisionAction
   elif [ "${ACTION}" = "status" ]; then
