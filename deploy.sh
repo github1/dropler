@@ -18,6 +18,7 @@ help() {
   echo "  status     shows the status of the droplet and ipv4 address"
   echo "  down       destroys the droplet"
   echo "  ssh        connects to the droplet via SSH"
+  echo "  logs       tails logs of service"
   exit 0
 }
 
@@ -94,7 +95,7 @@ if [ -f "/${NAME}/run.sh" ]; then
   . "/${NAME}/run.sh"
 else
   if [ -f "/${NAME}/docker-compose.yml" ]; then
-    docker-compose -f /${NAME}/docker-compose.yml up
+    docker-compose -f /${NAME}/docker-compose.yml up -d
   else
     echo "/${NAME}/docker-compose.yml not found"
   fi
@@ -130,8 +131,13 @@ destroyAction() {
 }
 
 sshAction() {
+  CMD="${1}"
   if [ "$(status)" == "active" ]; then
-    ssh root@$(ipv4) -o UserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -i /tmp/${SSH_KEY_NAME}
+    if [ -z "${CMD}" ]; then
+      ssh root@$(ipv4) -o UserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -i /tmp/${SSH_KEY_NAME}
+    else
+      ssh root@$(ipv4) -o UserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -i /tmp/${SSH_KEY_NAME} -t "${CMD}"
+    fi
   else
     statusAction
   fi
@@ -217,6 +223,15 @@ ACTION=$1;shift
 NAME=$(basename "${SCRIPT_PATH}")
 WORKING_DIR=$(pwd -P)
 LOCAL=false
+if [[ ! "${1}" == -* ]]; then
+   ARG=$1;shift
+fi
+if [[ ! "${1}" == -* ]]; then
+   ARG_2=$1;shift
+fi
+if [[ ! "${1}" == -* ]]; then
+   ARG_3=$1;shift
+fi
 
 while getopts d:n:e:,l flag; do
   case $flag in
@@ -276,7 +291,10 @@ else
   elif [ "${ACTION}" = "down" ]; then
     destroyAction
   elif [ "${ACTION}" = "ssh" ]; then
-    sshAction
+    sshAction "${ARG}"
+  elif [ "${ACTION}" = "logs" ]; then
+    COMPOSE_SERVICE=${ARG}
+    sshAction "cd /${NAME} && docker-compose -f docker-compose.yml logs --follow --tail='100' ${COMPOSE_SERVICE}"
   fi
 
 fi
