@@ -27,10 +27,10 @@ updateDNS() {
     if [ -n "${GODADDY_KEY}" ]; then
       IP_ADDR=$(ipv4)
       echo "updating ${NAME}.${ROOT_DOMAIN} to ${IP_ADDR}"
-      curl -sX PUT https://api.godaddy.com/v1/domains/${ROOT_DOMAIN}/records/A/${NAME} \
+      curl -sX PUT "https://api.godaddy.com/v1/domains/${ROOT_DOMAIN}/records/A/${NAME}" \
         -H 'Content-Type: application/json' \
         -H "Authorization: sso-key ${GODADDY_KEY}:${GODADDY_SECRET}" \
-        -d '{"data":"'${IP_ADDR}'","ttl":600}' 2>&1 > /dev/null
+        -d '[{"data":"'${IP_ADDR}'","ttl":600}]' 2>&1 > /dev/null
       echo "updated ${NAME}.${ROOT_DOMAIN} to ${IP_ADDR}"
     fi
   fi
