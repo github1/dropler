@@ -15,10 +15,11 @@ help() {
   echo "  up         creates a DigitalOcean droplet"
   echo "  dns        updates dns A record address"
   echo "  provision  runs docker-compose on the droplet if present"
+  echo "  restart    restarts the containers on on the droplet"
   echo "  status     shows the status of the droplet and ipv4 address"
   echo "  down       destroys the droplet"
   echo "  ssh        connects to the droplet via SSH"
-  echo "  logs       tails logs of service"
+  echo "  logs       tails logs of containers on the droplet"
   exit 0
 }
 
@@ -286,6 +287,9 @@ else
     updateDNS
   elif [ "${ACTION}" = "provision" ]; then
     provisionAction
+  elif [ "${ACTION}" = "restart" ]; then
+    COMPOSE_SERVICE=${ARG}
+    sshAction "cd /${NAME} && docker-compose -f docker-compose.yml restart ${COMPOSE_SERVICE}"
   elif [ "${ACTION}" = "status" ]; then
     statusAction
   elif [ "${ACTION}" = "down" ]; then
