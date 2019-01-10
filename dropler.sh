@@ -68,7 +68,7 @@ deployAction() {
 
 asExports() {
   for val in "$@"; do
-    echo "export $val=$(echo ${!val});"
+    echo 'export ' $(echo ${val} | awk -F= '{print $1 "=" $2}')';'
   done
 }
 

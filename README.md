@@ -5,6 +5,7 @@ Script for deploying containers to docker enabled [DigitalOcean](https://www.dig
 ## Options
 - `-d` — Set the dir to upload from (defaults to `.`)
 - `-n` — Set the droplet name (defaults to the upload dir name)
+- `-e` — Set environment variables passed to docker-compose (e.g. `-e FOO=bar -e BAZ=qux`)
 
 ## Commands
 - `up` — Creates a Docker enabled DigitalOcean droplet
@@ -19,22 +20,25 @@ Script for deploying containers to docker enabled [DigitalOcean](https://www.dig
 ### Example
 
 The below command will create a new droplet (with docker and docker-compose installed), rsync the contets of `./example` to the droplet, and run `docker-compose up`.
-
 ```bash
 ./dropler.sh up -d ./example
 ```
+
 if you make a change to your source, running the below command will rsync the source to the droplet and re-build/re-run the container:
 ```bash
 ./dropler.sh provision -d ./example
 ```
+
 you can get logs from the docker-compose process like so:
 ```bash
 ./dropler.sh logs -d ./example
 ```
+
 and you can ssh into the droplet:
 ```bash
 ./dropler.sh ssh -d ./example
 ```
+
 ... finally, to destroy the droplet:
 ```bash
 ./dropler.sh down -d ./example
