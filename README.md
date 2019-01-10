@@ -1,6 +1,6 @@
 # dropler
 
-Dropler is a script which assists with bootstrapping docker enabled digital ocean droplets.
+Dropler is a script which assists with bootstrapping docker enabled [DigitalOcean](https://www.digitalocean.com/) droplets.
 
 ## Options
 - `-d` — Set the dir to upload from (defaults to `.`)
