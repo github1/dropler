@@ -4,7 +4,7 @@ help() {
   echo "dropler"
   echo ""
   echo "usage:"
-  echo "  deploy.sh [COMMAND] [OPTS]"
+  echo "  ./dropler.sh [COMMAND] [OPTS]"
   echo ""
   echo "options:"
   echo "  -d         set the dir to upload from"
@@ -14,7 +14,7 @@ help() {
   echo "commands:"
   echo "  up         creates a DigitalOcean droplet"
   echo "  dns        updates dns A record address"
-  echo "  provision  runs docker-compose on the droplet if present"
+  echo "  provision  rsyncs local source code and runs docker-compose on the droplet"
   echo "  restart    restarts the containers on on the droplet"
   echo "  status     shows the status of the droplet and ipv4 address"
   echo "  down       destroys the droplet"
@@ -103,7 +103,7 @@ else
 fi
 EOF
   ssh root@${IP_ADDR} -o UserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -i /tmp/${SSH_KEY_NAME} -t "rm -rf /$NAME && mkdir -p /$NAME"
-  rsync -Pav --delete --exclude='.git/' --filter='dir-merge,- .gitignore' -e "ssh -o UserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -i /tmp/$SSH_KEY_NAME" ${WORKING_DIR} root@${IP_ADDR}:/
+  rsync -Pav --delete --exclude='.git/' --filter='dir-merge,- .gitignore' -e "ssh -o UserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -i /tmp/$SSH_KEY_NAME" ${WORKING_DIR} root@${IP_ADDR}:/${NAME}
   ssh root@${IP_ADDR} -o UserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -i /tmp/${SSH_KEY_NAME} -t "$PROVISION"
 }
 
