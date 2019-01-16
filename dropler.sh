@@ -38,12 +38,12 @@ updateDNS() {
 }
 
 deployAction() {
-  createKey
-  SSH_PUB_KEY_ID=$(getKeyID)
-  if [ "$SSH_PUB_KEY_ID" == "null" ]; then
-    exit 1
-  fi
   if [ "$(status)" == "down" ]; then
+    createKey
+    SSH_PUB_KEY_ID=$(getKeyID)
+    if [ "$SSH_PUB_KEY_ID" == "null" ]; then
+      exit 1
+    fi
     curl -s -X POST -H "Content-Type: application/json" \
     -H "Authorization: Bearer $DIGITALOCEAN_TOKEN" \
     -d '{"name":"'"$NAME"'","region":"nyc3","size":"1gb","image":"docker","ssh_keys":["'"$SSH_PUB_KEY_ID"'"],"tags":["'"$NAME"'"]}' \
@@ -102,9 +102,15 @@ else
   fi
 fi
 EOF
-  ssh root@${IP_ADDR} -o UserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -i /tmp/${SSH_KEY_NAME} -t "rm -rf /$NAME && mkdir -p /$NAME"
+  SSH_CMD="ssh root@${IP_ADDR} -o UserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -i /tmp/${SSH_KEY_NAME}"
+  ${SSH_CMD} -t "rm -rf /${NAME} && mkdir -p /${NAME}"
+  DROPLET_INIT_SCRIPT="${WORKING_DIR}/droplet.init.sh"
+  if [ -f "${DROPLET_INIT_SCRIPT}" ]; then
+    ${SSH_CMD} -t "${HOST_VARS} bash -s" < "${DROPLET_INIT_SCRIPT}"
+  fi
+  exit 0
   rsync -Pav --delete --exclude='.git/' --filter='dir-merge,- .gitignore' -e "ssh -o UserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -i /tmp/$SSH_KEY_NAME" ${WORKING_DIR} root@${IP_ADDR}:/${NAME}
-  ssh root@${IP_ADDR} -o UserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -i /tmp/${SSH_KEY_NAME} -t "$PROVISION"
+  ${SSH_CMD} -t "$PROVISION"
 }
 
 statusAction() {
