@@ -14,7 +14,8 @@ help() {
   echo "commands:"
   echo "  up         creates a DigitalOcean droplet"
   echo "  dns        updates dns A record address"
-  echo "  provision  rsyncs local source code and runs docker-compose on the droplet"
+  echo "  provision  rsyncs local source code to droplet and runs docker-compose"
+  echo "  rsync      rsyncs local source code to droplet"
   echo "  restart    restarts the containers on on the droplet"
   echo "  status     shows the status of the droplet and ipv4 address"
   echo "  down       destroys the droplet"
@@ -46,7 +47,7 @@ deployAction() {
     fi
     curl -s -X POST -H "Content-Type: application/json" \
     -H "Authorization: Bearer $DIGITALOCEAN_TOKEN" \
-    -d '{"name":"'"$NAME"'","region":"nyc3","size":"1gb","image":"docker","ssh_keys":["'"$SSH_PUB_KEY_ID"'"],"tags":["'"$NAME"'"]}' \
+    -d '{"name":"'"$NAME"'","region":"nyc1","size":"1gb","image":"docker","ssh_keys":["'"$SSH_PUB_KEY_ID"'"],"tags":["'"$NAME"'"]}' \
     "https://api.digitalocean.com/v2/droplets" | jq
   fi
 
@@ -68,7 +69,12 @@ deployAction() {
 
 asExports() {
   for val in "$@"; do
-    echo 'export ' $(echo ${val} | awk -F= '{print $1 "=" $2}')';'
+    VARIABLE_NAME=$(echo ${val} | awk -F= '{print $1}')
+    VARIABLE_VALUE="${!VARIABLE_NAME}"
+    if [ $(echo ${val} | awk -F= '{print NF; exit}') = "2" ]; then
+      VARIABLE_VALUE=$(echo ${val} | awk -F= '{print $2}')
+    fi
+    echo 'export '${VARIABLE_NAME}'='${VARIABLE_VALUE}';'
   done
 }
 
@@ -108,9 +114,13 @@ EOF
   if [ -f "${DROPLET_INIT_SCRIPT}" ]; then
     ${SSH_CMD} -t "${HOST_VARS} bash -s" < "${DROPLET_INIT_SCRIPT}"
   fi
-  exit 0
-  rsync -Pav --delete --exclude='.git/' --filter='dir-merge,- .gitignore' -e "ssh -o UserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -i /tmp/$SSH_KEY_NAME" ${WORKING_DIR} root@${IP_ADDR}:/${NAME}
+  rsyncAction
   ${SSH_CMD} -t "$PROVISION"
+}
+
+rsyncAction() {
+  IP_ADDR=$(ipv4)
+  rsync -Pav --delete --exclude='.git/' --filter='dir-merge,- .gitignore' -e "ssh -o UserKnownHostsFile=/dev/null -oStrictHostKeyChecking=no -i /tmp/$SSH_KEY_NAME" ${WORKING_DIR} root@${IP_ADDR}:/
 }
 
 statusAction() {
@@ -212,8 +222,12 @@ destroy() {
   fi
 }
 
-if [ -f ".env" ]; then
-  source .env
+if [ -z "${ENV_FILE}" ]; then
+  ENV_FILE='.env'
+fi
+
+if [ -f ${ENV_FILE} ]; then
+  source ${ENV_FILE}
 fi
 
 if ! which jq 2>&1 > /dev/null; then
@@ -293,11 +307,15 @@ else
     updateDNS
   elif [ "${ACTION}" = "provision" ]; then
     provisionAction
+  elif [ "${ACTION}" = "rsync" ]; then
+    rsyncAction
   elif [ "${ACTION}" = "restart" ]; then
     COMPOSE_SERVICE=${ARG}
     sshAction "cd /${NAME} && docker-compose -f docker-compose.yml restart ${COMPOSE_SERVICE}"
   elif [ "${ACTION}" = "status" ]; then
     statusAction
+  elif [ "${ACTION}" = "ls" ]; then
+    list
   elif [ "${ACTION}" = "down" ]; then
     destroyAction
   elif [ "${ACTION}" = "ssh" ]; then

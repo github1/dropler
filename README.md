@@ -10,7 +10,8 @@ Script for deploying containers to docker enabled [DigitalOcean](https://www.dig
 ## Commands
 - `up` — Creates a Docker enabled DigitalOcean droplet
 - `dns` — Creates an A record pointing to the droplets public ipv4 address
-- `provision` — Rsyncs local source code and runs docker-compose on the droplet
+- `provision` — Rsyncs local source code to droplet and runs docker-compose
+- `rsync` — Rsyncs local source code to droplet
 - `restart` — Restarts the containers on on the droplet
 - `status` — Shows the status of the droplet and ipv4 address
 - `down` — Destroys the droplet/docker-compose services
