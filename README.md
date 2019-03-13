@@ -18,29 +18,33 @@ Script for deploying containers to docker enabled [DigitalOcean](https://www.dig
 - `ssh` — Connects to the droplet via SSH
 - `logs` — Tails logs of containers on the droplet
 
-### Example
+### Examples
 
-The below command will create a new droplet (with docker and docker-compose installed), rsync the contets of `./example` to the droplet, and run `docker-compose up`.
+## Provisioning
+*The below command will create a new droplet (with docker and docker-compose installed), rsync the contets of `./example` to the droplet, and run `docker-compose up`.*
 ```bash
 ./dropler.sh up -d ./example
 ```
 
-if you make a change to your source, running the below command will rsync the source to the droplet and re-build/re-run the container:
+*If you make a change to your source, running the below command will rsync the source to the droplet and re-build/re-run the container:*
 ```bash
 ./dropler.sh provision -d ./example
 ```
 
-you can get logs from the docker-compose process like so:
+## Logs
+*You can get logs from the docker-compose process like so:*
 ```bash
 ./dropler.sh logs -d ./example
 ```
 
-and you can ssh into the droplet:
+## SSH
+*SSH into the droplet:*
 ```bash
 ./dropler.sh ssh -d ./example
 ```
 
-... finally, to destroy the droplet:
+## Destroy
+*... finally, to destroy the droplet:*
 ```bash
 ./dropler.sh down -d ./example
 ```
